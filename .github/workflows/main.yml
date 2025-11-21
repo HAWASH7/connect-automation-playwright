@@ -1,0 +1,69 @@
+name: Daily Playwright Test
+
+on:
+  schedule:
+    - cron: "0 7 * * *"   # 9 الصبح بتوقيت فلسطين (UTC+2)
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright Tests (Headless)
+        run: npx playwright test --headless
+        continue-on-error: true
+
+      # رفع الرپورت والصور كملفات Artifact
+      - name: Upload Test Report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: playwright-report
+
+      - name: Upload Screenshots
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: screenshots
+          path: test-results
+
+      # إرسال الرسالة إلى Discord
+      - name: Send result to Discord
+        if: always()
+        run: |
+          STATUS="${{ job.status }}"
+          COLOR=""
+
+          if [ "$STATUS" = "success" ]; then
+            COLOR=3066993
+            EMOJI="🟢"
+          else
+            COLOR=15158332
+            EMOJI="🔴"
+          fi
+
+          curl -X POST -H "Content-Type: application/json" \
+          -d "{
+            \"embeds\": [{
+              \"title\": \"Daily Automation Report\",
+              \"description\": \"$EMOJI Job Status: **$STATUS**\",
+              \"color\": $COLOR
+            }]
+          }" \
+          ${{ secrets.DISCORD_WEBHOOK }}
