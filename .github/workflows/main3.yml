@@ -1,0 +1,91 @@
+name: Daily Playwright Test
+
+on:
+  schedule:
+    - cron: "0 7 * * *"   # 9 صباحاً بتوقيت فلسطين (UTC+2)
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ---------------- CHECKOUT CODE ----------------
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # ---------------- SETUP NODE ----------------
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      # ---------------- INSTALL DEPENDENCIES ----------------
+      - name: Install dependencies
+        run: npm install
+
+      # ---------------- INSTALL BROWSERS ----------------
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      # ---------------- RUN TESTS ----------------
+      - name: Run Playwright tests
+        run: npx playwright test
+
+      # ---------------- UPLOAD HTML REPORT AS ARTIFACT ----------------
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: html-report
+          path: playwright-report
+
+      # ---------------- UPLOAD SCREENSHOTS ----------------
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: screenshots
+          path: tests/screenshots
+          if-no-files-found: ignore
+
+      # ---------------- UPLOAD VIDEOS ----------------
+      - name: Upload videos
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: videos
+          path: tests/videos
+          if-no-files-found: ignore
+
+      # ---------------- PUBLISH HTML REPORT TO GITHUB PAGES ----------------
+      - name: Publish HTML report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./playwright-report
+
+      # ---------------- SEND DISCORD MESSAGE ----------------
+      - name: Send formatted summary to Discord
+        if: always()
+        run: |
+          STATUS="${{ job.status }}"
+          DATE=$(date '+%Y-%m-%d %H:%M')
+          REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+
+          if [ "$STATUS" = "success" ]; then
+            ICON="🟢"
+          else
+            ICON="🔴"
+          fi
+
+          MESSAGE="**${ICON} Daily Automation Report**
+          **Status:** ${STATUS}
+          **Date:** ${DATE}
+          **HTML Report:** ${REPORT_URL}"
+
+          curl -X POST \
+          -H "Content-Type: application/json" \
+          -d "{\"content\": \"$MESSAGE\"}" \
+          ${{ secrets.DISCORD_WEBHOOK }}
