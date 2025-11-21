@@ -10,9 +10,10 @@ export default defineConfig({
   reporter: 'html',
   use: {
     
-headless: true, // مهم جداً للـ GitHub Actions
-    screenshot: 'only-on-failure',
-    trace: 'on-first-retry'
+headless: true,                  // يشغّل المتصفح بدون واجهة
+    video: 'on',                     // تسجيل فيديو لكل تيست
+    screenshot: 'only-on-failure',   // Screenshot فقط عند الفشل
+    trace: 'retain-on-failure',      // Trace فقط عند الفشل
   },
 
   projects: [
