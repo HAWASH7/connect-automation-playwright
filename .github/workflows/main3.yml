@@ -2,7 +2,7 @@ name: Daily Playwright Test
 
 on:
   schedule:
-    - cron: "0 7 * * *"   # 9 صباحاً بتوقيت فلسطين (UTC+2)
+    - cron: "0 7 * * *" # 9 صباحًا بتوقيت فلسطين (UTC+2)
   workflow_dispatch:
 
 jobs:
@@ -10,82 +10,70 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ---------------- CHECKOUT CODE ----------------
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # ---------------- SETUP NODE ----------------
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      # ---------------- INSTALL DEPENDENCIES ----------------
       - name: Install dependencies
         run: npm install
 
-      # ---------------- INSTALL BROWSERS ----------------
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
-      # ---------------- RUN TESTS ----------------
       - name: Run Playwright tests
-        run: npx playwright test
+        run: npx playwright test --reporter=html
 
-      # ---------------- UPLOAD HTML REPORT AS ARTIFACT ----------------
+      # --------------------------
+      # Upload HTML report
+      # --------------------------
       - name: Upload HTML report
-        if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: html-report
           path: playwright-report
 
-      # ---------------- UPLOAD SCREENSHOTS ----------------
+      # --------------------------
+      # Upload screenshots/video
+      # --------------------------
       - name: Upload screenshots
-        if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: screenshots
-          path: tests/screenshots
-          if-no-files-found: ignore
+          path: test-results
 
-      # ---------------- UPLOAD VIDEOS ----------------
-      - name: Upload videos
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: videos
-          path: tests/videos
-          if-no-files-found: ignore
-
-      # ---------------- PUBLISH HTML REPORT TO GITHUB PAGES ----------------
-      - name: Publish HTML report to GitHub Pages
-        if: always()
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./playwright-report
-
-      # ---------------- SEND DISCORD MESSAGE ----------------
-      - name: Send formatted summary to Discord
+      # --------------------------
+      # Send summary to Discord
+      # --------------------------
+      - name: Send result summary to Discord
         if: always()
         run: |
           STATUS="${{ job.status }}"
-          DATE=$(date '+%Y-%m-%d %H:%M')
-          REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+          curl -X POST -H "Content-Type: application/json" \
+          -d "{\"content\": \"🔥 **Playwright Automation Report**\nStatus: ${STATUS}\nRepository: $GITHUB_REPOSITORY\nRun: $GITHUB_RUN_NUMBER\"}" \
+          ${{ secrets.DISCORD_WEBHOOK }}
 
-          if [ "$STATUS" = "success" ]; then
-            ICON="🟢"
-          else
-            ICON="🔴"
+      # --------------------------
+      # Send first screenshot to Discord (if exists)
+      # --------------------------
+      - name: Send first screenshot to Discord
+        if: always()
+        run: |
+          FILE=$(ls test-results/**/*.png | head -n 1 || true)
+          if [ -n "$FILE" ]; then
+            curl -X POST -F "file=@$FILE" ${{ secrets.DISCORD_WEBHOOK }}
           fi
 
-          MESSAGE="**${ICON} Daily Automation Report**
-          **Status:** ${STATUS}
-          **Date:** ${DATE}
-          **HTML Report:** ${REPORT_URL}"
-
-          curl -X POST \
-          -H "Content-Type: application/json" \
-          -d "{\"content\": \"$MESSAGE\"}" \
-          ${{ secrets.DISCORD_WEBHOOK }}
+      # --------------------------
+      # Send video to Discord (if exists)
+      # --------------------------
+      - name: Send video to Discord
+        if: always()
+        run: |
+          VIDEO=$(ls test-results/**/*.webm | head -n 1 || true)
+          if [ -n "$VIDEO" ]; then
+            curl -X POST -F "file=@$VIDEO" ${{ secrets.DISCORD_WEBHOOK }}
+          fi
