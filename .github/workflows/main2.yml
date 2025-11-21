@@ -50,23 +50,33 @@ jobs:
           path: test-results
 
       # 8) رسالة أساسية على Discord (status + رابط الـ Run)
-      - name: Send result summary to Discord
+            - name: Send formatted summary to Discord
         if: always()
         run: |
           STATUS="${{ job.status }}"
-          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          TESTS=$(npx playwright test --list | wc -l)
+          DATE=$(date '+%Y-%m-%d %H:%M')
+          REPORT_URL="https://raw.githubusercontent.com/${{ github.repository }}/gh-pages/index.html"
 
           if [ "$STATUS" = "success" ]; then
-            EMOJI="🟢"
+            ICON="🟢"
           else
-            EMOJI="🔴"
+            ICON="🔴"
           fi
 
-          MSG="$EMOJI **Daily Automation Report**%0AStatus: **$STATUS**%0ARun: $RUN_URL"
+          MESSAGE="**${ICON} Daily Automation Report**
+          **Status:** ${STATUS}
+          **Date:** ${DATE}
+          **Total Tests:** ${TESTS}
+          **Report:** 
+          ${REPORT_URL}
+          "
 
-          curl -X POST -H "Content-Type: application/json" \
-            -d "{\"content\": \"$MSG\"}" \
-            ${{ secrets.DISCORD_WEBHOOK }}
+          curl -X POST \
+          -H "Content-Type: application/json" \
+          -d "{\"content\": \"$MESSAGE\"}" \
+          ${{ secrets.DISCORD_WEBHOOK }}
+
 
       # 9) إرسال أول Screenshot (لو موجود) على Discord
       - name: Send first screenshot to Discord
