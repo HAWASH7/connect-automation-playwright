@@ -1,0 +1,101 @@
+name: Daily Playwright Test
+
+on:
+  schedule:
+    - cron: "0 7 * * *"   # 9 الصبح بتوقيت فلسطين (UTC+2)
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) سحب الكود من الريبو
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2) إعداد Node
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 3) تثبيت البكجات
+      - name: Install dependencies
+        run: npm ci
+
+      # 4) تثبيت متصفحات Playwright
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      # 5) تشغيل التيستات (Headless)
+      - name: Run Playwright tests
+        run: npx playwright test --headless
+        continue-on-error: true  # عشان يكمل الخطوات حتى لو في فشل
+
+      # 6) رفع HTML report كـ Artifact
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+
+      # 7) رفع الـ screenshots كـ Artifact
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: test-results
+
+      # 8) رسالة أساسية على Discord (status + رابط الـ Run)
+      - name: Send result summary to Discord
+        if: always()
+        run: |
+          STATUS="${{ job.status }}"
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          if [ "$STATUS" = "success" ]; then
+            EMOJI="🟢"
+          else
+            EMOJI="🔴"
+          fi
+
+          MSG="$EMOJI **Daily Automation Report**%0AStatus: **$STATUS**%0ARun: $RUN_URL"
+
+          curl -X POST -H "Content-Type: application/json" \
+            -d "{\"content\": \"$MSG\"}" \
+            ${{ secrets.DISCORD_WEBHOOK }}
+
+      # 9) إرسال أول Screenshot (لو موجود) على Discord
+      - name: Send first screenshot to Discord
+        if: always()
+        run: |
+          FILE=$(find test-results -type f -name "*.png" | head -n 1 || true)
+
+          if [ -n "$FILE" ]; then
+            echo "Found screenshot: $FILE"
+            curl -X POST \
+              -F "file=@$FILE" \
+              -F 'payload_json={"content": "🖼 First screenshot from last run"}' \
+              ${{ secrets.DISCORD_WEBHOOK }}
+          else
+            echo "No screenshot found."
+          fi
+
+      # 10) إرسال أول فيديو (لو موجود) على Discord
+      - name: Send first video to Discord
+        if: always()
+        run: |
+          VID=$(find test-results -type f \( -name "*.webm" -o -name "*.mp4" \) | head -n 1 || true)
+
+          if [ -n "$VID" ]; then
+            echo "Found video: $VID"
+            curl -X POST \
+              -F "file=@$VID" \
+              -F 'payload_json={"content": "🎥 First video from last run"}' \
+              ${{ secrets.DISCORD_WEBHOOK }}
+          else
+            echo "No video found."
+          fi
