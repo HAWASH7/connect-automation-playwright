@@ -60,4 +60,6 @@ export class CreateOrderPage {
   async saveOrder() {
     await this.page.getByRole('button', { name: 'إضافة', exact: true }).click();
   }
+
+  
 }

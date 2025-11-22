@@ -15,6 +15,7 @@ headless: true,                  // يشغّل المتصفح بدون واجه�
     screenshot: 'only-on-failure',   // Screenshot فقط عند الفشل
     trace: 'retain-on-failure',      // Trace فقط عند الفشل
   },
+  
 
   projects: [
     {
