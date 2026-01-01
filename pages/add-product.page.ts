@@ -34,6 +34,7 @@ export class AddProductPage {
     await this.clickAddProduct();
     await this.fillProductName(name);
     await this.fillPrice();
+    await this.page.waitForTimeout(3000);
     await this.selectWarehouse();
     await this.save();
   }

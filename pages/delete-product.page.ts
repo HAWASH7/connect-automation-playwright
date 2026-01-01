@@ -13,5 +13,12 @@ export class DeleteProductPage {
   async deleteFirstProduct() {
     await this.page.getByRole('button', { name: 'حذف المنتج' }).first().click();
     await this.page.getByRole('button', { name: 'تأكيد' }).click();
+        await this.page.getByRole('button', { name: 'حذف المنتج' }).first().click();
+    await this.page.getByRole('button', { name: 'تأكيد' }).click();
+        await this.page.getByRole('button', { name: 'حذف المنتج' }).first().click();
+    await this.page.getByRole('button', { name: 'تأكيد' }).click();
+        await this.page.getByRole('button', { name: 'حذف المنتج' }).first().click();
+    await this.page.getByRole('button', { name: 'تأكيد' }).click();
+    
   }
 }
