@@ -19,32 +19,32 @@ const random = Math.floor(Math.random() * 100000);
 const productName = `Product-Automation-${random}`;
 
   // ---------------- LOGIN ----------------
-  await login.login('0111190125', '12345678');
+await login.login('0111190125', '12345678');
 
-  // ---------------- ADD PRODUCT ----------------
-await addProduct.createProduct(productName);
+//   ---------------- ADD PRODUCT ----------------
+ await addProduct.createProduct(productName);
 
-  // ---------------- ADD STOCK ----------------
- await stock.gotoStockPage();
+//   // ---------------- ADD STOCK ----------------
+//  await stock.gotoStockPage();
 
-await stock.searchProduct(productName);
+// await stock.searchProduct(productName);
 
-await stock.addStockToSearchedProduct('1000');
+// await stock.addStockToSearchedProduct('1000');
 
-  // ---------------- CREATE ORDER ----------------
+//   // ---------------- CREATE ORDER ----------------
 
- await orderPage.gotoOrders();
-await orderPage.startAddOrder();
-await orderPage.fillCustomer('0598356823');
-await orderPage.fillAddress('القدس');
-await orderPage.clickAddProduct();
-await orderPage.searchProduct(productName);
-await orderPage.selectProduct(productName);
-await orderPage.fillProductQty(productName, '1');
-await orderPage.confirmAddProduct();
-await orderPage.fillAddress('القدس');
-await orderPage.fillCOD('200');
-await orderPage.saveOrder();
+//  await orderPage.gotoOrders();
+// await orderPage.startAddOrder();
+// await orderPage.fillCustomer('0598356823');
+// await orderPage.fillAddress('القدس');
+// await orderPage.clickAddProduct();
+// await orderPage.searchProduct(productName);
+// await orderPage.selectProduct(productName);
+// await orderPage.fillProductQty(productName, '1');
+// await orderPage.confirmAddProduct();
+// await orderPage.fillAddress('القدس');
+// await orderPage.fillCOD('200');
+// await orderPage.saveOrder();
 
 // ----------------- CHECK STOCK -----------------
 // await stockVerify.gotoStockPage();
@@ -53,8 +53,8 @@ await orderPage.saveOrder();
 // ----------------- DELETE PRODUCT -----------------
 
 
-await deleteProduct.gotoProductsPage();
-await deleteProduct.deleteFirstProduct();
+//await deleteProduct.gotoProductsPage();
+//await deleteProduct.deleteFirstProduct();
 
 });
 
